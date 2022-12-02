@@ -1,0 +1,26 @@
+# Copyright (C) 2021-2022 Mitsubishi Electric Research Laboratories (MERL)
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+name: pyrobocop
+channels:
+  - defaults
+  - conda-forge
+  - anaconda
+dependencies:
+  - python=3.6.12
+  - pip
+  - numpy=1.19.4
+  - cyipopt=0.2.0
+  - seaborn
+  - matplotlib
+  - boost=1.73.0
+  - casadi
+  - pyomo
+  - pykalman
+  # Dev, test and IDE tools (not core)
+  - pre-commit
+  - black
+  - flake8
+  - pytest
+  - pytest-cov

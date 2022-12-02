@@ -1,0 +1,125 @@
+# Copyright (C) 2022 Mitsubishi Electric Research Laboratories (MERL)
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+# To debug workflow, add ACTIONS_STEP_DEBUG=true as a secret to the repo.
+
+# https://docs.github.com/en/actions/managing-workflow-runs/disabling-and-enabling-a-workflow
+
+name: Build and test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - '**'
+    tags-ignore:
+      - '**'
+
+env:
+  LICENSE: AGPL-3.0-or-later
+
+jobs:
+
+  build-linux:
+    name: Run build and test on Linux
+    # See https://github.com/actions/virtual-environments/blob/main/images/linux/Ubuntu1804-Readme.md for list of packages
+    runs-on: ubuntu-18.04
+    defaults:
+      run:
+        shell: bash -l {0}
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    - name: Set up conda
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        python-version: 3.8
+        miniforge-variant: Mambaforge
+        miniforge-version: latest
+        use-mamba: true
+        activate-environment: pyrobocop
+
+    - name: Get Date
+      id: get-date
+      run: echo "::set-output name=today::$(/bin/date -u '+%Y%m%d')"
+      shell: bash
+
+    - name: Cache Conda env
+      id: conda-cache
+      uses: actions/cache@v3
+      with:
+        path: ${{ env.CONDA }}/envs
+        key: conda-${{ runner.os }}--${{ runner.arch }}--${{ steps.get-date.outputs.today }}-${{ hashFiles('pyrobocop.yml') }}-${{ env.CACHE_NUMBER }}
+      env:
+        # Increase this value to reset cache if environment .yml file has not changed
+        CACHE_NUMBER: 0
+
+    - name: Update environment
+    # TODO: This seems to update python from 3.8 to 3.9
+      if: steps.conda-cache.outputs.cache-hit != 'true'
+      run: mamba env update -n pyrobocop -f pyrobocop.yml
+
+    - name: Install boost
+      run: sudo apt-get update && sudo apt-get install -yq libboost-all-dev
+
+    - name: Cache pyadolc
+      id: cache-pyadolc
+      uses: actions/cache@v3
+      with:
+        path: pyadolc
+        key: ${{ runner.os }}-pyadolc
+
+    - name: Bootstrap pyadolc
+      if: steps.cache-pyadolc.outputs.cache-hit != 'true'
+      run: |
+        # TODO: Use specific commit to avoid any potentially breaking updates
+        # This should not happen, but sometimes cache is restored but cache-hit is false?
+        if [ ! -d "pyadolc" ]
+        then
+          git clone -b adolc-2.6.0_boost_1.66 https://github.com/b45ch1/pyadolc.git pyadolc
+          cd pyadolc
+          # Patch some files
+          patch -p1 < ../pyadolc_install/pyadolc.patch
+          ./bootstrap.sh
+        fi
+
+    - name: Configure boost and install pyadolc
+      run: |
+        # make install the dependencies
+        cd ${GITHUB_WORKSPACE}/pyadolc/PACKAGES/ColPack-1.0.10 && make install
+        cd ${GITHUB_WORKSPACE}/pyadolc/PACKAGES/ADOL-C && make install
+
+        export BOOST_DIR=$CONDA/envs/pyrobocop
+
+        # Build and install. The echo -e "\n" avoids waiting for the input() command.
+        cd ${GITHUB_WORKSPACE}/pyadolc
+        echo -e "\n" | python setup.py build
+        echo -e "\n" | python setup.py install
+
+    - name: Run tests and build coverage file
+      run: |
+        cd PyRoboCOP
+        source setpath.sh
+        pytest --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=. tests/ | tee pytest-coverage.txt
+
+    - name: Add pytest coverage comment to PR/commit
+      id: coverage_comment
+      uses: MishaKav/pytest-coverage-comment@main
+      with:
+        pytest-coverage-path: ./PyRoboCOP/pytest-coverage.txt
+        junitxml-path: ./PyRoboCOP/pytest.xml
+
+    - name: Check the output coverage
+      run: |
+        coverage=${{ steps.coverage_comment.outputs.coverage }}
+        min_coverage=35
+        coverage=${coverage%"%"}
+        if ((coverage < ${min_coverage})); then
+          echo "Coverage Percentage - ${{ steps.coverage_comment.outputs.coverage }} is below required ${min_coverage}%"
+          exit 1
+        else
+          echo "Coverage Percentage - ${{ steps.coverage_comment.outputs.coverage }}"
+        fi

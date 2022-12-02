@@ -1,0 +1,13 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+
+Files: .vscode/*
+Copyright: 2022 Mitsubishi Electric Research Laboratories (MERL)
+License: AGPL-3.0-or-later
+
+Files: PyRoboCOP/Results/*.png
+Copyright: 2021-2022 Mitsubishi Electric Research Laboratories (MERL)
+License: AGPL-3.0-or-later
+
+Files: PyRoboCOP/Envs/Dynamics/CircularMaze/Models/*.txt
+Copyright: 2021-2022 Mitsubishi Electric Research Laboratories (MERL)
+License: AGPL-3.0-or-later

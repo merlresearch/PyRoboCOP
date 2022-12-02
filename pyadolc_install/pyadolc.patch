@@ -1,0 +1,65 @@
+# Copyright (C) 2022 Mitsubishi Electric Research Laboratories (MERL)
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+diff --git a/adolc/colpack/src/py_colpack_adolc.hpp b/adolc/colpack/src/py_colpack_adolc.hpp
+index dd0db0f..ffd6009 100644
+--- a/adolc/colpack/src/py_colpack_adolc.hpp
++++ b/adolc/colpack/src/py_colpack_adolc.hpp
+@@ -33,7 +33,7 @@ BOOST_PYTHON_MODULE(_colpack)
+ {
+ 	using namespace boost::python;
+   bpn::initialize();
+-  import_array();
++  _import_array();
+ 	def("sparse_jac_no_repeat",  &wrapped_sparse_jac_no_repeat);
+ 	def("sparse_jac_repeat",  &wrapped_sparse_jac_repeat);
+
+diff --git a/adolc/sparse/src/py_sparse_adolc.hpp b/adolc/sparse/src/py_sparse_adolc.hpp
+index 6f3fb92..5b6798b 100644
+--- a/adolc/sparse/src/py_sparse_adolc.hpp
++++ b/adolc/sparse/src/py_sparse_adolc.hpp
+@@ -35,7 +35,7 @@ BOOST_PYTHON_MODULE(_sparse)
+ {
+ 	using namespace boost::python;
+   bpn::initialize();
+-  import_array();
++  _import_array();
+ 	def("jac_pat", 	             &wrapped_jac_pat);
+ 	// def("sparse_jac_no_repeat",  &wrapped_sparse_jac_no_repeat);
+ 	// def("sparse_jac_repeat",  &wrapped_sparse_jac_repeat);
+diff --git a/adolc/src/py_adolc.hpp b/adolc/src/py_adolc.hpp
+index 671f13a..e605157 100755
+--- a/adolc/src/py_adolc.hpp
++++ b/adolc/src/py_adolc.hpp
+@@ -208,7 +208,7 @@ BOOST_PYTHON_MODULE(_adolc)
+ {
+ 	using namespace boost::python;
+   boost::python::numpy::initialize();
+-	import_array(); 										/* some kind of hack to get numpy working */
++	_import_array(); 										/* some kind of hack to get numpy working */
+ 	//bpn::ndarray::set_module_and_type("numpy", "ndarray");	/* some kind of hack to get numpy working */
+
+ 	scope().attr("__doc__") ="unused: moved docstring to adolc.py";
+diff --git a/setup.py b/setup.py
+index 078e784..8fe4d22 100644
+--- a/setup.py
++++ b/setup.py
+@@ -37,7 +37,7 @@ colpack_lib_path1    = os.path.join(COLPACK_DIR, 'lib')
+ colpack_lib_path2    = os.path.join(COLPACK_DIR, 'lib64')
+
+ # ADAPT THIS TO FIT YOUR SYSTEM
+-extra_compile_args = ['-std=c++11 -ftemplate-depth-100 -DBOOST_PYTHON_DYNAMIC_LIB -Wno-unused-local-typedefs']
++extra_compile_args = ['-std=c++11', '-fPIC', '-w', '-DBOOST_PYTHON_DYNAMIC_LIB']
+
+ if sys.platform == 'darwin' and os.environ.get('CC', 'clang').find('clang') > 0:
+     extra_compile_args += ['-stdlib=libc++ -mmacosx-version-min=10.9']
+@@ -47,7 +47,7 @@ library_dirs = [boost_library_path1, boost_library_path2, adolc_library_path1, a
+ if sys.version_info.major<3:
+     boost_libraries = ['boost_python','boost_numpy']
+ else:
+-    boost_libraries = ['boost_python3','boost_numpy3']
++    boost_libraries = ['boost_python','boost_numpy']
+ libraries = boost_libraries +['adolc', 'ColPack']
+
+ print('')

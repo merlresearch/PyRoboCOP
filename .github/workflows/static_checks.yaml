@@ -1,0 +1,77 @@
+# Copyright (C) 2022 Mitsubishi Electric Research Laboratories (MERL)
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+name: Static code checks
+
+on:
+  pull_request:
+  push:
+    branches:
+      - '**'
+    tags-ignore:
+      - '**'
+
+env:
+  LICENSE: AGPL-3.0-or-later
+  FETCH_DEPTH: 1
+  FULL_HISTORY: 0
+  SKIP_WORD_PRESENCE_CHECK: 0
+
+jobs:
+  static-code-check:
+    if: endsWith(github.event.repository.name, 'private')
+
+    name: Run static code checks
+    # See https://github.com/actions/virtual-environments/blob/main/images/linux/Ubuntu1804-Readme.md for list of packages
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
+
+    steps:
+    - name: Setup history
+      if: github.ref == 'refs/heads/oss'
+      run: |
+        echo "FETCH_DEPTH=0" >> $GITHUB_ENV
+        echo "FULL_HISTORY=1" >> $GITHUB_ENV
+
+    - name: Setup version
+      if: github.ref == 'refs/heads/melco'
+      run: |
+        echo "SKIP_WORD_PRESENCE_CHECK=1" >> $GITHUB_ENV
+
+    - name: Check out code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: ${{ env.FETCH_DEPTH }} # '0' to check full history
+
+    - name: Set up environment
+      run: git config user.email github-bot@merl.com
+
+    - name: Set up python
+      uses: actions/setup-python@v3
+      with:
+        python-version: 3.8
+        cache: 'pip'
+        cache-dependency-path: '.github/workflows/requirements-ci.txt'
+
+    - name: Install python packages
+      run: pip install -r .github/workflows/requirements-ci.txt
+
+    - name: Ensure pre-commit steps have been run
+      uses: pre-commit/action@v2.0.3
+
+    - name: Check files
+      uses: merlresearch/merl-file-check-action@v1
+      with:
+        license: ${{ env.LICENSE }}
+        full-history: ${{ env.FULL_HISTORY }} # If true, use fetch-depth 0 above
+        skip-word-presence-check: ${{ env.SKIP_WORD_PRESENCE_CHECK }}
+
+    - name: Check license compatibility
+      if: github.ref != 'refs/heads/melco'
+      uses: merlresearch/merl_license_compatibility_checker@v1
+      with:
+        input-filename: pyrobocop.yml
+        license: ${{ env.LICENSE }}

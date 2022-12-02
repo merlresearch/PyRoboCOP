@@ -1,0 +1,8 @@
+{
+   "recommendations": [
+      "ms-python.python",
+      "ms-python.vscode-pylance",
+      "njqdev.vscode-python-typehint",
+      "njpwerner.autodocstring"
+   ]
+}
