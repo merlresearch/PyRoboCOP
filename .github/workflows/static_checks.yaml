@@ -60,10 +60,10 @@ jobs:
       run: pip install -r .github/workflows/requirements-ci.txt
 
     - name: Ensure pre-commit steps have been run
-      uses: pre-commit/action@v2.0.3
+      uses: pre-commit/action@v3.0.0
 
     - name: Check files
-      uses: merlresearch/merl-file-check-action@v1
+      uses: merl-oss-private/merl-file-check-action@v1
       with:
         license: ${{ env.LICENSE }}
         full-history: ${{ env.FULL_HISTORY }} # If true, use fetch-depth 0 above
@@ -71,7 +71,7 @@ jobs:
 
     - name: Check license compatibility
       if: github.ref != 'refs/heads/melco'
-      uses: merlresearch/merl_license_compatibility_checker@v1
+      uses: merl-oss-private/merl_license_compatibility_checker@v1
       with:
         input-filename: pyrobocop.yml
         license: ${{ env.LICENSE }}

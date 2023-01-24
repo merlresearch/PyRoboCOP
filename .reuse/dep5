@@ -11,3 +11,7 @@ License: AGPL-3.0-or-later
 Files: PyRoboCOP/Envs/Dynamics/CircularMaze/Models/*.txt
 Copyright: 2021-2022 Mitsubishi Electric Research Laboratories (MERL)
 License: AGPL-3.0-or-later
+
+Files: PyRoBoCOP_Software_Package.pdf
+Copyright: 2021-2022 Mitsubishi Electric Research Laboratories (MERL)
+License: AGPL-3.0-or-later
